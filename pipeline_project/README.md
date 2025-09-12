@@ -1,4 +1,6 @@
-## Financial Data Labeling and Preprocessing FrameworkIntroduction
+## Financial Data Labeling and Preprocessing Framework
+
+## Introduction
 
 This repository implements a complete pipeline for quantitative finance research.
 Starting from a dataset composed of time bars (candlestick data), the code applies the triple-barrier method for event labeling and enriches the dataset with lagged features.
