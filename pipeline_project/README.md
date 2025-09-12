@@ -1,4 +1,4 @@
-## Financial Data Labeling and Preprocessing Framework
+# Financial Data Labeling and Preprocessing Framework
 
 ## Introduction
 
@@ -39,7 +39,7 @@ Although there exist additional methodologies for structuring market data—such
 
 ### Sampling
 
-So far, we have obtained a more informative dataset to initiate the training of machine learning models. However, an important consideration must be addressed: if the objective is to build a model capable of predicting financial outcomes, it is crucial that the algorithm learns primarily from relevant examples. Attempting to generate predictions at every single timestamp would unnecessarily increase complexity and noise, making the learning process significantly more difficult. For this reason, it is preferable to detect and focus on  specific events, which serve as meaningful points for the model to learn from.
+So far, we have obtained a more informative dataset to initiate the training of machine learning models. However, an important consideration must be addressed: if the objective is to build a model capable of predicting financial outcomes, it is crucial that the algorithm learns primarily from relevant examples. Attempting to generate predictions at every single timestamp would unnecessarily increase complexity and noise, making the learning process significantly more difficult. For this reason, it is preferable to detect and focus on specific events, which serve as meaningful points for the model to learn from.
 
 There exist multiple methodologies to reduce the number of observations in a financial time series. While several approaches will be explored in future stages of this research, the present work focuses on the implementation of the CUSUM Filter as an event detection mechanism.
 
@@ -53,16 +53,20 @@ $$
 S_t = \max \{0, \, S_{t-1} + y_t - \mathbb{E}_{t-1}[y_t]\}, \quad S_0 = 0
 $$
 
-An action is triggered the first time $S_t$ exceeds a given threshold $h$ (the filter size).
-Notice that $S_t = 0$ whenever $$
-y_t \leq \mathbb{E}_{t-1}[y_t] - S_{t-1}
-$$. This "zero floor" ensures that negative deviations do not accumulate indefinitely, as the filter is specifically designed to capture upside divergences.
+An action is triggered the first time $S_t$ exceeds a given threshold $h$ (the filter size).  
+Notice that:
+
+$$
+S_t = 0 \quad \text{whenever} \quad S_{t-1} + y_t - \mathbb{E}_{t-1}[y_t] \leq 0
+$$
+
+This "zero floor" ensures that negative deviations do not accumulate indefinitely, as the filter is specifically designed to capture upside divergences.
 
 Formally, the threshold condition can be written as:
 
 $$
 S_t \geq h \quad \Leftrightarrow \quad \exists \, \tau \in [1, t] :
-\sum_{i=\tau}^t \big(y_i - \mathbb{E}_{i-1}[y_t]\big) \geq h
+\sum_{i=\tau}^t \big(y_i - \mathbb{E}_{i-1}[y_i]\big) \geq h
 $$
 
 This framework of run-ups can be extended symmetrically to detect run-downs as well, leading to the symmetric CUSUM filter:
@@ -97,7 +101,7 @@ The procedure defines three barriers for each observation in the time series:
 2. Lower barrier (stop-loss level): If the price hits this threshold first, the event is labeled as a negative outcome (–1).
 3. Vertical barrier (time limit): If neither the upper nor the lower barrier is reached within the predetermined time horizon, the outcome is determined by the return observed at the expiration of that horizon. In such cases, the label is set to 1 if the return is positive and -1 if the return is negative. Some approaches instead assign a label of 0 to these situations; however, doing so can introduce problems related to class imbalance and may reduce the informational content of the dataset.
 
-This approach ensures that each event is classified in a way that incorporates both directional price moves and  time constraints, which are fundamental aspects of trading decisions. As a result, the triple-barrier method avoids biases introduced by arbitrary time-based labels and better reflects the dynamics of real financial markets.
+This approach ensures that each event is classified in a way that incorporates both directional price moves and time constraints, which are fundamental aspects of trading decisions. As a result, the triple-barrier method avoids biases introduced by arbitrary time-based labels and better reflects the dynamics of real financial markets.
 
 This example illustrates the implementation of the triple-barrier method in a real trading position. In this case, the position is defined with parameters [1, 1], meaning that the profit-taking and stop-loss thresholds are symmetric. When the closing price reaches either of these two barriers, the outcome is labeled as 1 in the case of profit-taking or -1 in the case of stop-loss. Note that the width of the bars is irregular, as they correspond to volume bars.
 
@@ -107,39 +111,39 @@ This example illustrates the implementation of the triple-barrier method in a re
 
 Our features are not independent, since new events may begin before previous ones have ended. This violates the IID (independent and identically distributed) assumption required by most machine learning models.
 
-To mitigate this issue, we employ  **sequential bootstrap** , a resampling technique that adjusts the probability of selecting observations according to their  *uniqueness* . This reduces redundancy from overlapping outcomes, producing samples that are closer to the IID assumption compared to the standard bootstrap. Importantly, each sample is defined not only from the occurrence of the event until the barrier is reached, but also incorporates the *n* historical bars preceding the event, thereby ensuring that relevant pre-event information is preserved.
+To mitigate this issue, we employ **sequential bootstrap**, a resampling technique that adjusts the probability of selecting observations according to their *uniqueness*. This reduces redundancy from overlapping outcomes, producing samples that are closer to the IID assumption compared to the standard bootstrap. Importantly, each sample is defined not only from the occurrence of the event until the barrier is reached, but also incorporates the *n* historical bars preceding the event, thereby ensuring that relevant pre-event information is preserved.
 
 The process works as follows:
 
-Initial draw: 
+**Initial draw:**  
 The first observation is drawn uniformly:
 
 $$
 i \sim \mathcal{U}\{1,\dots,I\}, \qquad \delta_i^{(1)} = \frac{1}{I}.
 $$
 
-Uniqueness of observation \(j\) at time \(t\):
+**Uniqueness of observation $j$ at time $t$:**
 
 $$
 u_{t,j} = \frac{1_{t,j}}{1 + \sum_{k \in \varphi^{(t-1)}} 1_{t,k}},
 $$
 
-where \(\varphi^{(t-1)}\) is the set of previously drawn observations, and \(1_{t,j}\) is the indicator that \(j\) is active at time \(t\).
+where $\varphi^{(t-1)}$ is the set of previously drawn observations, and $1_{t,j}$ is the indicator that $j$ is active at time $t$.
 
-Average uniqueness of \(j\) over its lifespan:
-
-$$
-\bar{u}_j \;=\; \frac{\sum_{t=1}^T u_{t,j}}{\sum_{t=1}^T 1_{t,j}}.
-$$
-
-Updated sampling probability:
+**Average uniqueness of $j$ over its lifespan:**
 
 $$
-\delta_j^{(t)} \;=\; \frac{\bar{u}_j^{(t)}}{\sum_{k=1}^I \bar{u}_k^{(t)}}, \qquad
+\bar{u}_j = \frac{\sum_{t=1}^T u_{t,j}}{\sum_{t=1}^T 1_{t,j}}.
+$$
+
+**Updated sampling probability:**
+
+$$
+\delta_j^{(t)} = \frac{\bar{u}_j^{(t)}}{\sum_{k=1}^I \bar{u}_k^{(t)}}, \qquad
 \sum_{j=1}^I \delta_j^{(t)} = 1.
 $$
 
-The process continues until $I$ draws are made.
+The process continues until $I$ draws are made.  
 This approach allows for repeated draws (as in standard bootstrap), but the likelihood decreases with redundancy. As a result, the sequential bootstrap produces samples with higher average uniqueness and closer to independence than the standard bootstrap.
 
 ### Purged K-Fold CV
@@ -148,8 +152,8 @@ In financial time series, a conventional cross-validation approach cannot be app
 
 To address this, Purged K-Fold Cross-Validation introduces two mechanisms:
 
-1. Purging: When defining the training and test splits, all training samples whose labels overlap in time with the test set are removed. This prevents leakage of information from events that are still “active” during the test period.
-2. Embargo: Even after purging, events occurring immediately after the test set may still share information with it due to the **serial correlation** of financial data. To mitigate this, a small embargo period is imposed after each test set, during which no training samples are allowed.
+1. **Purging:** When defining the training and test splits, all training samples whose labels overlap in time with the test set are removed. This prevents leakage of information from events that are still “active” during the test period.  
+2. **Embargo:** Even after purging, events occurring immediately after the test set may still share information with it due to the **serial correlation** of financial data. To mitigate this, a small embargo period is imposed after each test set, during which no training samples are allowed.
 
 Moreover, each sample is defined not only from the occurrence of the event until the barrier is reached, but also includes the *n* historical bars preceding the event.
 
@@ -159,7 +163,7 @@ This methodology ensures that the validation process respects the chronological 
 
 Most statistical models rely on the assumption that the underlying process is stationary. A common approach to achieve stationarity is differencing. However, this transformation often produces a time series that exhibits very low serial correlation with the original one. As a result, although stationarity is attained, a substantial amount of memory is lost, which undermines predictive performance in most practical applications.
 
-To address this limitation, fractional differentiation can be applied, allowing the differencing order $d$ to take non-integer values. By selecting an optimal $d$—defined as the smallest value of d for which the null hypothesis of a unit root in the Augmented Dickey-Fuller (ADF) test can be rejected—one can achieve stationarity while preserving a significant degree of memory from the original series.
+To address this limitation, fractional differentiation can be applied, allowing the differencing order $d$ to take non-integer values. By selecting an optimal $d$—defined as the smallest value of $d$ for which the null hypothesis of a unit root in the Augmented Dickey-Fuller (ADF) test can be rejected—one can achieve stationarity while preserving a significant degree of memory from the original series.
 
 Fractional differentiation generalizes the classical differencing used in time series analysis. Instead of requiring the differencing order $d$ to be an integer, it allows $d$ to take real values.
 
@@ -201,7 +205,7 @@ $$
 (1 - B)^d = 1 - dB + \frac{d(d-1)}{2!} B^2 - \frac{d(d-1)(d-2)}{3!} B^3 + \dots
 $$
 
-Fractional differentiation preserveslong memory because past observations are not fully discarded,but instead receive decreasing weights.
+Fractional differentiation preserves long memory because past observations are not fully discarded, but instead receive decreasing weights.
 
 For $0 < d < 1$, past values $X_{t-k}$ still influence the present, but with progressively smaller weights.
 
@@ -213,7 +217,7 @@ as it helps reduce non-stationarity while still retaining important long memory 
 Consider a random walk:
 
 $$
-X_t = X_{t-1} + \varepsilon_t, X_0=0
+X_t = X_{t-1} + \varepsilon_t, \qquad X_0=0
 $$
 
 where $\varepsilon_t$ is a white noise error term.
