@@ -109,7 +109,8 @@ To mitigate this issue, we employ  **sequential bootstrap** , a resampling techn
 
 The process works as follows:
 
-Initial draw: The first observation is drawn uniformly:
+Initial draw: 
+The first observation is drawn uniformly:
 
 $$
 i \sim \mathcal{U}\{1,\dots,I\}, \qquad \delta_i^{(1)} = \frac{1}{I}.
