@@ -54,7 +54,9 @@ S_t = \max \{0, \, S_{t-1} + y_t - \mathbb{E}_{t-1}[y_t]\}, \quad S_0 = 0
 $$
 
 An action is triggered the first time $S_t$ exceeds a given threshold $h$ (the filter size).
-Notice that $S_t = 0$ whenever $y_t \leq \mathbb{E}_{t-1}[y_t] - S_{t-1}$. This "zero floor" ensures that negative deviations do not accumulate indefinitely, as the filter is specifically designed to capture upside divergences.
+Notice that $S_t = 0$ whenever $$
+y_t \leq \mathbb{E}_{t-1}[y_t] - S_{t-1}
+$$. This "zero floor" ensures that negative deviations do not accumulate indefinitely, as the filter is specifically designed to capture upside divergences.
 
 Formally, the threshold condition can be written as:
 
