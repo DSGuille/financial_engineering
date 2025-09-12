@@ -47,7 +47,7 @@ There exist multiple methodologies to reduce the number of observations in a fin
 
 The CUSUM (Cumulative Sum) filter is a statistical quality-control technique designed to detect shifts in the mean of a measured process. Its goal is to identify significant deviations from a reference value by accumulating small changes over time.
 
-Let us consider a sequence of independent and identically distributed (i.i.d.) observations $\{ y_t \}_{t=1}^T$ from a locally stationary process. The cumulative sums are defined as:
+Let us consider a sequence of independent and identically distributed (i.i.d.) observations $$ \{y_t\}_{t=1}^T $$ from a locally stationary process. The cumulative sums are defined as:
 
 $$
 S_t = \max \{0, \, S_{t-1} + y_t - \mathbb{E}_{t-1}[y_t]\}, \quad S_0 = 0
