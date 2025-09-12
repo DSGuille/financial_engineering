@@ -8,7 +8,7 @@ import tpqoa
 import numpy as np
 
 def build_labeled_datasets(df, h_factor=1, trgt_factor=1, minRet=0.0005, 
-                      ptSl=1, numDays=5, sampling_method=None,
+                      ptSl=1, numDays=5, sampling_method=None, validation_method='PurgedKFold',
                       nBootstraps=1, k_folds=3, pctEmbargo=0.01,
                       n_lags=10, label_col="bin"):
     """
@@ -76,31 +76,36 @@ def build_labeled_datasets(df, h_factor=1, trgt_factor=1, minRet=0.0005,
     lagged_Xy.index = new_index.loc[Xy.index].values
 
     # --- Sampling ---
-    bins_bootstrap, bins_oos = [], []
+    bins_train, bins_test = [], []
     
+
     if sampling_method == 'seqBootstrap':
         indM = getIndMatrix(close.index, lagged_events['t1'])
         for _ in range(nBootstraps):
             phi = seqBootstrap(indM)
-            bins_bootstrap.append(lagged_bins.index[phi])
+            bins_train.append(lagged_bins.index[phi])
             all_idx = set(range(len(lagged_bins)))
-            bins_oos.append(lagged_bins.index[list(all_idx - set(phi))])
+            bins_test.append(lagged_bins.index[list(all_idx - set(phi))])
 
-    elif sampling_method == 'PurgedKFold':
+    elif validation_method == 'PurgedKFold':
         pkf = PurgedKFold(n_splits=k_folds, t1=lagged_events['t1'], pctEmbargo=pctEmbargo)
         for train_idx, test_idx in pkf.split(lagged_bins):
-            bins_bootstrap.append(lagged_bins.iloc[train_idx].index)
-            bins_oos.append(lagged_bins.iloc[test_idx].index)
+            bins_train.append(lagged_bins.iloc[train_idx].index)
+            bins_test.append(lagged_bins.iloc[test_idx].index)
             # to also purge features + labels, not just labels
-    elif sampling_method is None:
-        bins_bootstrap, bins_oos = [], []
-        
-    else:
-        raise ValueError("sampling_method must be 'seqBootstrap', 'PurgedKFold' or None")
 
+    elif sampling_method is None and validation_method is None:
+        # No resampling or validation
+        bins_train, bins_test = [], []
+
+    else:
+        raise ValueError(
+            "Invalid combination: sampling_method must be 'seqBootstrap' or None, "
+            "and validation_method must be 'PurgedKFold' or None."
+    )
     datasets = []
     
-    for boot_idx, oos_idx in zip(bins_bootstrap, bins_oos):
+    for boot_idx, oos_idx in zip(bins_train, bins_test):
         # Train/test features and labels
         X_train = lagged_Xy.loc[boot_idx].drop(columns=[label_col])
         y_train = lagged_Xy.loc[boot_idx, label_col]
@@ -138,5 +143,5 @@ if __name__ == "__main__":
         df[col] = np.log(df[col])
 
     bars = volume_bars(df, bar_size=10000)
-    results = build_labeled_datasets(bars, sampling_method='PurgedKFold', k_folds=4, minRet=0.0001, n_lags=5, pctEmbargo=0.01, h_factor=1/10)
+    results = build_labeled_datasets(bars, validation_method='PurgedKFold', k_folds=4, minRet=0.0001, n_lags=5, pctEmbargo=0.01, h_factor=1/10)
     print(results["Xy"].head())
