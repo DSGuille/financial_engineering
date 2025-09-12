@@ -5,6 +5,7 @@ from purged_kfold import PurgedKFold
 import pandas as pd
 from multiprocessing import cpu_count
 import tpqoa
+import numpy as np
 
 def build_labeled_datasets(df, h_factor=1, trgt_factor=1, minRet=0.0005, 
                       ptSl=1, numDays=5, sampling_method=None,
@@ -133,6 +134,9 @@ if __name__ == "__main__":
         })
     df["Instrument"] = "EUR_USD"
 
+    for col in ["Open", "High", "Low", "Close"]:
+        df[col] = np.log(df[col])
+
     bars = volume_bars(df, bar_size=10000)
-    results = build_labeled_datasets(bars, sampling_method='PurgedKFold', k_folds=4, minRet=0.001, n_lags=5, pctEmbargo=0.01)
+    results = build_labeled_datasets(bars, sampling_method='PurgedKFold', k_folds=4, minRet=0.0001, n_lags=5, pctEmbargo=0.01, h_factor=1/10)
     print(results["Xy"].head())
