@@ -162,7 +162,7 @@ This methodology ensures that the validation process respects the chronological 
 
 ### Fractional differentiation
 
-Most statistical models rely on the assumption that the underlying process is stationary. A common approach to achieve stationarity is differencing. However, this transformation often produces a time series that exhibits very low serial correlation with the original one. As a result, although stationarity is attained, a substantial amount of memory is lost, which undermines predictive performance in most practical applications.
+Most statistical models rely on the assumption that the underlying process is stationary. A common approach to achieve stationarity is differencing. Although modern machine learning models do not strictly require stationarity, applying such preprocessing is often beneficial, as it facilitates learning by ensuring that patterns are expressed on a comparable scale across time. However, this transformation often produces a time series that exhibits very low serial correlation with the original one. As a result, although stationarity is attained, a substantial amount of memory is lost, which undermines predictive performance in most practical applications.
 
 To address this limitation, fractional differentiation can be applied, allowing the differencing order $d$ to take non-integer values. By selecting an optimal $d$—defined as the smallest value of $d$ for which the null hypothesis of a unit root in the Augmented Dickey-Fuller (ADF) test can be rejected—one can achieve stationarity while preserving a significant degree of memory from the original series.
 
