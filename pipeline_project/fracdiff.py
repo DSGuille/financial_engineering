@@ -60,6 +60,7 @@ def findThreshold(series, d, seed_threshold, series_size, tol=0.1, max_iter=10):
 def findMinFFD_fromData(df, col='Close', confidence_level=0.95,
                         seed_threshold=0.01, d_step=0.1, series_size=0.9, tol=0.1, max_iter=10):
     best_d = None
+    best_thres = None
     valid_keys = ['1%', '5%', '10%']
     closest_key = min(valid_keys, key=lambda x: abs(int(x[:-1])/100 - (1 - confidence_level)))
 
@@ -74,11 +75,12 @@ def findMinFFD_fromData(df, col='Close', confidence_level=0.95,
                 conf_val = adf_result[4][closest_key]
                 if adf_result[0] < conf_val:
                     best_d = d
+                    best_thres = thres
                     break
             except Exception as e:
                 print(f"ADF falló en d={d}: {e}")
-    return np.round(best_d, 2) if best_d is not None else None
-
+    return (np.round(best_d, 2) if best_d is not None else None,
+            best_thres if best_thres is not None else None)
 
 # Test script
 if __name__ == "__main__":
