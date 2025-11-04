@@ -82,7 +82,51 @@ def findMinFFD_fromData(df, col='Close', confidence_level=0.95,
     return (np.round(best_d, 2) if best_d is not None else None,
             best_thres if best_thres is not None else None)
 
-# Test script
+def inverse_fracdiff(frac_diffed, lag_data, d, thres=1e-5):
+    """
+    Reconstructs the original series (fractional integration) from the
+    fractionally differenced version.
+
+    Parameters
+    ----------
+    frac_diffed : pd.Series or np.array
+        Fractionally differenced data (the stationary series)
+    lag_data : pd.Series or np.array
+        The last K values of the original series before differencing
+    d : float
+        Fractional differencing order
+    thres : float
+        Threshold used in the original differencing (for consistency)
+
+    Returns
+    -------
+    pd.Series
+        Reconstructed series on the original scale
+    """
+
+    frac_diffed = pd.Series(frac_diffed).dropna()
+    lag_data = pd.Series(lag_data).dropna()
+    weights = [1.0]
+    k = 1
+    
+    while True:
+        w_ = -weights[-1] * (d - k + 1) / k
+        if abs(w_) < thres:
+            break
+        weights.append(w_)
+        k += 1
+
+    weights = np.array(weights)
+    K = len(weights)
+    reconstructed = list(lag_data.values)
+    for t in range(len(frac_diffed)):
+        x_t = frac_diffed.iloc[t] - np.dot(weights[1:], reconstructed[-(K-1):][::-1])
+        reconstructed.append(x_t)
+
+    reconstructed = pd.Series(reconstructed, name='Recovered')
+    reconstructed.index = range(len(reconstructed))
+    return reconstructed
+
 if __name__ == "__main__":
     np.random.seed(27)
     dates = pd.date_range('2020-01-01', periods=500)
@@ -112,3 +156,4 @@ To address this trade-off, a bisection method can be used to automatically find 
 This method adjusts the threshold so that the resulting series preserves a desired proportion of the original data, 
 balancing accuracy with series length. In other words, instead of choosing thres arbitrarily, the bisection ensures 
 that the fractional differentiation is as precise as possible while maintaining enough valid observations for analysis.'''
+
