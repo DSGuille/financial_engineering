@@ -109,28 +109,28 @@ To mitigate this issue, we employ  **sequential bootstrap** , a resampling techn
 
 The process works as follows:
 
-Initial draw
+#### 1. Initial draw
 $$
 i \sim U[1, I], 
 \qquad 
 \delta_i^{(1)} = \frac{1}{I}
 $$
 
-Uniqueness de la observación \(j\) en el tiempo \(t\)
+#### 2. Uniqueness de la observación \(j\) en el tiempo \(t\)
 $$
 u_{t,j} = 
 \frac{1_{t,j}}
      {1 + \sum_{k \in \varphi^{(t-1)}} 1_{t,k}}
 $$
 
-Average uniqueness de \(j\)
+#### 3. Average uniqueness de \(j\)
 $$
 \bar{u}_j^{(t)} = 
 \frac{\sum_{t=1}^T u_{t,j}}
      {\sum_{t=1}^T 1_{t,j}}
 $$
 
-Updated sampling probability
+#### 4. Updated sampling probability
 $$
 \delta_j^{(t)} =
 \frac{\bar{u}_j^{(t)}}
@@ -140,6 +140,7 @@ $$
 $$
 \sum_{j=1}^I \delta_j^{(t)} = 1
 $$
+
 
 
 
