@@ -109,28 +109,31 @@ To mitigate this issue, we employ  **sequential bootstrap** , a resampling techn
 
 The process works as follows:
 
-1. Initial draw:The first observation is drawn uniformly:
+**1. Initial draw:**  
+\[
+i \sim U[1, I], \qquad \delta_i^{(1)} = \frac{1}{I}
+\]
 
-   $$
-   i \sim U[1, I], \quad \delta_i^{(1)} = \frac{1}{I}
-   $$
-2. Uniqueness of observation $j$ at time **$t$**:
+**2. Uniqueness de la observación \(j\) en el tiempo \(t\):**  
+\[
+u_{t,j} = \frac{1_{t,j}}{1 + \sum_{k \in \varphi^{(t-1)}} 1_{t,k}}
+\]
 
-   $$
-   u_{t,j} = \frac{1_{t,j}}{1 + \sum_{k \in \varphi^{(t-1)}} 1_{t,k}}
-   $$
+**3. Average uniqueness de \(j\):**  
+\[
+\bar{u}_j^{(t)} =
+\frac{\sum_{t=1}^T u_{t,j}}
+     {\sum_{t=1}^T 1_{t,j}}
+\]
 
-   where $\varphi^{(t-1)}$ is the set of previously drawn observations, and $1_{t,j}$ indicates if $j$ is active at $t$.
-3. Average uniqueness of $j$ over its lifespan:
+**4. Updated sampling probability:**  
+\[
+\delta_j^{(t)} =
+\frac{\bar{u}_j^{(t)}}{\sum_{k=1}^I \bar{u}_k^{(t)}},
+\qquad
+\sum_{j=1}^I \delta_j^{(t)} = 1
+\]
 
-   $$
-   \bar{u}_j^{(t)} = \frac{\sum_{t=1}^T u_{t,j}}{\sum_{t=1}^T 1_{t,j}}
-   $$
-4. Updated sampling probability:
-
-   $$
-   \delta_j^{(t)} = \frac{\bar{u}_j^{(t)}}{\sum_{k=1}^I \bar{u}_k^{(t)}}, \quad \sum_{j=1}^I \delta_j^{(t)} = 1
-   $$
 
 The process continues until $I$ draws are made.
 This approach allows for repeated draws (as in standard bootstrap), but the likelihood decreases with redundancy. As a result, the sequential bootstrap produces samples with higher average uniqueness and closer to independence than the standard bootstrap.
